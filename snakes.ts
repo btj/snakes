@@ -35,6 +35,8 @@ const foodRadius = 10;
 const initialEdgeSize = 0.0001;
 let speed = 50; // pixels per second
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+const scoreboard = document.getElementById('scoreboard')!;
+let nbFoodsEaten = 0;
 const ctxt = canvas.getContext('2d')!;
 ctxt.fillStyle = 'blue';
 const vertices = [new Point(0, canvas.height/2), new Point(canvas.width/2, canvas.height/2)];
@@ -55,8 +57,7 @@ function drawFoods() {
     }
 }
 let nbSegments = 6;
-function drawSnake() {
-    // First, compute each segment's location
+function computeSegmentLocations() {
     let edgeIndex = edgeLengths.length - 1;
     let offset = 0;
     const segmentLocations = [vertices.at(-1)];
@@ -69,6 +70,11 @@ function drawSnake() {
         const edgeFraction = offset / edgeLengths[edgeIndex];
         segmentLocations.push(vertices[edgeIndex].scaled(edgeFraction).plus(vertices[edgeIndex + 1].scaled(1 - edgeFraction)));
     }
+    return segmentLocations;
+}
+function drawSnake() {
+    // First, compute each segment's location
+    const segmentLocations = computeSegmentLocations();
     // Next, draw the segments
     ctxt.fillStyle = 'blue';
     for (let i = segmentLocations.length - 1; 0 <= i; i--) {
@@ -96,6 +102,8 @@ function checkFoodHit() {
     let newFoods = [];
     for (let food of foods) {
         if (food.loc.distanceTo(vertices.at(-1)) < foodRadius + radius) {
+            nbFoodsEaten++;
+            scoreboard.innerText = nbFoodsEaten + ' koekjes opgegeten';
             nbSegmentsToGrow += 4;
             speed += 2;
             newFoods.push(new Food(new Point(Math.random() * canvas.width, Math.random() * canvas.height)));
@@ -104,6 +112,24 @@ function checkFoodHit() {
         }
     }
     foods = newFoods;
+}
+function isOutsideCanvas(p) {
+    return p.x < 0 || canvas.width < p.x || p.y < 0 || canvas.height < p.y;
+}
+function hitsBody(p, pRadius) {
+    const segmentLocations = computeSegmentLocations();
+    // Skip the first four segments
+    for (let i = 4; i < segmentLocations.length; i++) {
+        let loc = segmentLocations[i];
+        if (loc.distanceTo(p) < radius + pRadius)
+            return true;
+    }
+    return false;
+}
+function checkCollision() {
+    const loc = vertices.at(-1);
+    if (isOutsideCanvas(loc) || hitsBody(loc, radius))
+        alert('Game Over');
 }
 function grow(distance: number) {
     distanceGrown += distance;
@@ -126,6 +152,7 @@ function update() {
     edgeLengths[edgeLengths.length - 1] += distanceMoved;
     checkFoodHit();
     redrawCanvas();
+    checkCollision();
 }
 function setDirection(direction: Point) {
     // Add a tiny edge
