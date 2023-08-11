@@ -33,7 +33,7 @@ const initialNbSegments = 6;
 const initialNbFoods = 6;
 const foodRadius = 10;
 const initialEdgeSize = 0.0001;
-const speed = 50; // pixels per second
+let speed = 50; // pixels per second
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 const ctxt = canvas.getContext('2d')!;
 ctxt.fillStyle = 'blue';
@@ -96,7 +96,8 @@ function checkFoodHit() {
     let newFoods = [];
     for (let food of foods) {
         if (food.loc.distanceTo(vertices.at(-1)) < foodRadius + radius) {
-            nbSegmentsToGrow += 2;
+            nbSegmentsToGrow += 4;
+            speed += 2;
             newFoods.push(new Food(new Point(Math.random() * canvas.width, Math.random() * canvas.height)));
         } else {
             newFoods.push(food);
