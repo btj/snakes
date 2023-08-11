@@ -39,6 +39,8 @@ const ctxt = canvas.getContext('2d')!;
 ctxt.fillStyle = 'blue';
 const vertices = [new Point(0, canvas.height/2), new Point(canvas.width/2, canvas.height/2)];
 const edgeLengths = [vertices[0].distanceTo(vertices[1])];
+let nbSegmentsToGrow = 0;
+let distanceGrown = 0;
 let foods = [];
 for (let i = 0; i < initialNbFoods; i++) {
     const loc = new Point(Math.random() * canvas.width, Math.random() * canvas.height);
@@ -94,17 +96,29 @@ function checkFoodHit() {
     let newFoods = [];
     for (let food of foods) {
         if (food.loc.distanceTo(vertices.at(-1)) < foodRadius + radius) {
-            // Food was eaten
+            nbSegmentsToGrow += 2;
+            newFoods.push(new Food(new Point(Math.random() * canvas.width, Math.random() * canvas.height)));
         } else {
             newFoods.push(food);
         }
     }
     foods = newFoods;
 }
+function grow(distance: number) {
+    distanceGrown += distance;
+    while (nbSegmentsToGrow > 0 && distanceGrown >= segmentDistance) {
+        distanceGrown -= segmentDistance;
+        nbSegmentsToGrow--;
+        nbSegments++;
+    }
+    if (nbSegmentsToGrow == 0)
+        distanceGrown = 0;
+}
 redrawCanvas();
 const dt = 1/60;
 function update() {
     const distanceMoved = dt * speed;
+    grow(distanceMoved);
     const directionUnitVector = vertices.at(-1).minus(vertices.at(-2)).normalized();
     // Enlarge the final edge by the distance moved
     vertices[vertices.length - 1] = vertices.at(-1).plus(directionUnitVector.scaled(distanceMoved));
