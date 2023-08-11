@@ -23,9 +23,15 @@ class Point {
     }
 }
 
+class Food {
+    constructor(public loc: Point) {}
+}
+
 const radius = 15;
 const segmentDistance = 15;
 const initialNbSegments = 6;
+const initialNbFoods = 6;
+const foodRadius = 10;
 const initialEdgeSize = 0.0001;
 const speed = 50; // pixels per second
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -33,6 +39,19 @@ const ctxt = canvas.getContext('2d')!;
 ctxt.fillStyle = 'blue';
 const vertices = [new Point(0, canvas.height/2), new Point(canvas.width/2, canvas.height/2)];
 const edgeLengths = [vertices[0].distanceTo(vertices[1])];
+let foods = [];
+for (let i = 0; i < initialNbFoods; i++) {
+    const loc = new Point(Math.random() * canvas.width, Math.random() * canvas.height);
+    foods.push(new Food(loc));
+}
+function drawFoods() {
+    ctxt.fillStyle = 'yellow';
+    for (let food of foods) {
+        ctxt.beginPath();
+        ctxt.ellipse(food.loc.x, food.loc.y, foodRadius, foodRadius, 0, 0, 2*Math.PI);
+        ctxt.fill();
+    }
+}
 let nbSegments = 6;
 function drawSnake() {
     // First, compute each segment's location
@@ -49,6 +68,7 @@ function drawSnake() {
         segmentLocations.push(vertices[edgeIndex].scaled(edgeFraction).plus(vertices[edgeIndex + 1].scaled(1 - edgeFraction)));
     }
     // Next, draw the segments
+    ctxt.fillStyle = 'blue';
     for (let i = segmentLocations.length - 1; 0 <= i; i--) {
         const loc = segmentLocations[i];
         if (i == 0) {
@@ -68,6 +88,18 @@ function drawSnake() {
 function redrawCanvas() {
     ctxt.clearRect(0, 0, canvas.width, canvas.height);
     drawSnake();
+    drawFoods();
+}
+function checkFoodHit() {
+    let newFoods = [];
+    for (let food of foods) {
+        if (food.loc.distanceTo(vertices.at(-1)) < foodRadius + radius) {
+            // Food was eaten
+        } else {
+            newFoods.push(food);
+        }
+    }
+    foods = newFoods;
 }
 redrawCanvas();
 const dt = 1/60;
@@ -77,6 +109,7 @@ function update() {
     // Enlarge the final edge by the distance moved
     vertices[vertices.length - 1] = vertices.at(-1).plus(directionUnitVector.scaled(distanceMoved));
     edgeLengths[edgeLengths.length - 1] += distanceMoved;
+    checkFoodHit();
     redrawCanvas();
 }
 function setDirection(direction: Point) {
